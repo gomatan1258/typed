@@ -8,10 +8,28 @@ $(()=>{
 	const $timerLabel = $("#timer");
 
 	const timeLimit = 180 * 1000;
+	// const words = [
+	// 	'apple', 'sky', 'blue', 'middle', 'set',
+	// ];
 	const words = [
-		'apple', 'sky', 'blue', 'middle', 'set',
+		["優柔不断","ゆうじゅうふだん"],
+		["武士の情け","ぶしのなさけ"],
+		["タイピングソフト","たいぴんぐそふと"],
+		["エンターキー","えんたーきー"],
+		["味噌豚骨","みそとんこつ"],
+		["危ない橋を渡る","あぶないはしをわたる"],
+		["急がば回れ","いそがばまわれ"],
+		["円周率","えんしゅうりつ"],
+		["足し算引き算","たしざんひきざん"],
+		["アメリカ合衆国","あめりかがっしゅうこく"],
+		["大敗を喫す","たいはいをきっす"],
+		["根性なし","こんじょうなし"],
+		["甘いものが欲しい","あまいものがほしい"],
+		["オニオンサーモン","おにおんさーもん"],
+		["袋のネズミ","ふくろのねずみ"],
 	];
 	let word;
+	let romaji;
 	let loc;
 	let score;
 	let miss;
@@ -23,6 +41,7 @@ $(()=>{
 		if(e.key === "Enter" && isPlaying === false) {
 			startTime = Date.now(); //updateTimerを行う前の経過ミリ秒を代入
 			isPlaying = true;
+			createTarget();
 			init();
 			updateTimer();
 			return;
@@ -31,12 +50,12 @@ $(()=>{
 		if(isPlaying === false) {
 			return;
 		}
-		if(e.key === word[loc]) {
-			exportString += word[loc];
+		if(e.key === romaji[loc]) {
+			exportString += romaji[loc];
 			loc++;
-			if(loc === word.length) {
+			if(loc === romaji.length) {
 				exportString = "";
-				word = words[Math.floor(Math.random() * words.length)];
+				createTarget();
 				loc = 0;
 			}
 			updateTarget();
@@ -49,7 +68,7 @@ $(()=>{
 	});
 	
 	function updateTarget() {
-		$target.html("<span style=\"color: red;\">"+exportString+"</span>" + word.substring(loc));
+		$target.html("<span style=\"color: red;\">"+exportString+"</span>" + romaji.substring(loc));
 	}
 	
 	function updateTimer() {
@@ -77,10 +96,14 @@ $(()=>{
 		score = 0;
 		miss = 0;
 		loc = 0;
-		word = words[Math.floor(Math.random() * words.length)];
 		$scoreLabel.text(score);
 		$missLabel.text(miss);
-		$target.text(word);
+		$target.text(romaji);
+	}
+
+	function createTarget() {
+		word = words[Math.floor(Math.random() * words.length)];
+		romaji = createRomajiTarget(toArrayJapanese(word[1]));
 	}
 
 	let kana = {
@@ -189,13 +212,17 @@ $(()=>{
 		"んてぃ":["nnteli","nntexi","nnthi","nthi"],
 		"んでゅ":["nndelyu","nndexyu","ndelyu","ndexyu"],
 		"んー":["nn-","n-"],"ん。":["nn.","n."], "ん、":["nn,","n,"],
-};
+	};
 
-console.log(test("ちょっとまっててね"));
-
-//ぁぃぅぇぉ　っ　ん　- , .が最初に来ることがない
-//っの前に　ん　は来ない　んの後に　っ　は来ない
-	function test(string) {
+	function createRomajiTarget(array) {
+		let str = "";
+		for(let i=0; i<array.length; i++) {
+			str += kana[array[i]][0];
+		}
+		return str;
+	}
+	
+	function toArrayJapanese(string) {
 		let array = [];
 		let prev = "";
 		let curr = "";
@@ -204,17 +231,15 @@ console.log(test("ちょっとまっててね"));
 			prev = string[i-1];
 			curr = string[i];
 			next = string[i+1];
-			if(!(prev === "ん"
-			  || prev === "っ"
-			  || prev === "ぁ"
-			  || prev === "ぃ"
-			  || prev === "ぅ"
-			  || prev === "ぇ"
-			  || prev === "ぉ"
-			  || prev === "ゃ"
-			  || prev === "ゅ"
-			  || prev === "ょ")) {
-				if(next === "ぁ"
+			if(prev === undefined) {
+				prev = "";
+			}
+			if(next === undefined) {
+				next = "";
+			}
+			
+			if(prev === "っ") {
+				if(next === "ぁ" 
 				|| next === "ぃ"
 				|| next === "ぅ"
 				|| next === "ぇ"
@@ -223,87 +248,89 @@ console.log(test("ちょっとまっててね"));
 				|| next === "ゅ"
 				|| next === "ょ"
 				) {
-					array.push(curr+next);
-					console.log(array);
+					array.push(prev+curr+next);
+				}else {
+					array.push(prev+curr);
+				}
+				continue;
+			}
+			if(prev === "ん") {
+				if(curr === "あ"
+				|| curr === "い"
+				|| curr === "う"
+				|| curr === "え"
+				|| curr === "お"
+				|| curr === "な"
+				|| curr === "に"
+				|| curr === "ぬ"
+				|| curr === "ね"
+				|| curr === "の"
+				) {
+					array.push(prev);
+					array.push(curr);
+					continue;
+				}
+				if(next === "ぁ" 
+				|| next === "ぃ"
+				|| next === "ぅ"
+				|| next === "ぇ"
+				|| next === "ぉ"
+				|| next === "ゃ"
+				|| next === "ゅ"
+				|| next === "ょ"
+				) {
+					array.push(prev+curr+next);
+				} else {
+					array.push(prev+curr);
+				}
+				continue;
+			}
+			if(next === "ぁ"
+			|| next === "ぃ"
+			|| next === "ぅ"
+			|| next === "ぇ"
+			|| next === "ぉ"
+			|| next === "ゃ"
+			|| next === "ゅ"
+			|| next === "ょ"
+			) {
+				array.push(curr+next);
+				continue;
+			}
+			if(i === string.length-1) {
+				if(curr === "ん") {
+					array.push(curr);
 				}
 			}
-			if(prev === "っ") {
-				if(next === "ぁ"
-				 ||next === "ぃ"
-				 ||next === "ぅ"
-				 ||next === "ぇ"
-				 ||next === "ぉ"
-				 ||next === "ゃ"
-				 ||next === "ゅ"
-				 ||next === "ょ"
-				) {
-					array.push(prev+curr+next);
-					console.log(array);
-				}else {
-					array.push(prev+curr);  
-					console.log(array);
-				}
-			}            
-			if(prev === "ん") {
-				if(next === "ぁ"
-				||next === "ぃ"
-				||next === "ぅ"
-				||next === "ぇ"
-				||next === "ぉ"
-				||next === "ゃ"
-				||next === "ゅ"
-				||next === "ょ"
-				) {
-					array.push(prev+curr+next);
-					console.log(array);
-				}else {
-					array.push(prev+curr);  
-					console.log(array);
-				}
+			if(curr === "ぁ"
+            || curr === "ぃ"
+            || curr === "ぅ"
+            || curr === "ぇ"
+            || curr === "ぉ"
+            || curr === "ゃ"
+            || curr === "ゅ"
+            || curr === "ょ"
+			|| curr === "っ"
+			|| curr === "ん"
+			) {
+                continue;
+            } else {
+				array.push(curr);
 			}
 		}
 		return array;
 	}
+    
+    function shuffle(array) {
+        let n = array.length;
+        let t;
+        let i;
+        while (n) {
+            i = Math.floor(Math.random() * n--);
+            t = array[n];
+            array[n] = array[i];
+            array[i] = t;
+        }
+        return array;
+	}
 });
-											// if(prev === "っ") {
-											//     if(next === "ぁ"
-											//     || next === "ぃ"
-											//     || next === "ぅ"
-											//     || next === "ぇ"
-											//     || next === "ぉ"
-											//     || next === "ゃ"
-											//     || next === "ゅ"
-											//     || next === "ょ") {
-											//         array.push(prev+curr+next);
-											//     }else{
-											//         array.push(prev+curr);
-											//     }
-											// }
-											// if(prev === "ん") {
-											//     if(next === "ぁ"
-											//     || next === "ぃ"
-											//     || next === "ぅ"
-											//     || next === "ぇ"
-											//     || next === "ぉ"
-											//     || next === "ゃ"
-											//     || next === "ゅ"
-											//     || next === "ょ") {
-											//         nextPull = next;
-											//     }
-											//     if((curr === "あ"
-											//     || curr === "い"
-											//     || curr === "う"
-											//     || curr === "え"
-											//     || curr === "お"
-											//     || curr === "な"
-											//     || curr === "に"
-											//     || curr === "ぬ"
-											//     || curr === "ね"
-											//     || curr === "の")) {
-											//         array.push(prev+curr+nextPull);
-											//     }
-											// }else {
-											//     array.push(curr);
-											// }
-
-
