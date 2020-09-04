@@ -2,110 +2,6 @@
 
 $(()=>{
 	
-	const $target = $("#target");
-	const $scoreLabel = $("#score");
-	const $missLabel = $("#miss");
-	const $timerLabel = $("#timer");
-
-	const timeLimit = 180 * 1000;
-	// const words = [
-	// 	'apple', 'sky', 'blue', 'middle', 'set',
-	// ];
-	const words = [
-		["優柔不断","ゆうじゅうふだん"],
-		["武士の情け","ぶしのなさけ"],
-		["タイピングソフト","たいぴんぐそふと"],
-		["エンターキー","えんたーきー"],
-		["味噌豚骨","みそとんこつ"],
-		["危ない橋を渡る","あぶないはしをわたる"],
-		["急がば回れ","いそがばまわれ"],
-		["円周率","えんしゅうりつ"],
-		["足し算引き算","たしざんひきざん"],
-		["アメリカ合衆国","あめりかがっしゅうこく"],
-		["大敗を喫す","たいはいをきっす"],
-		["根性なし","こんじょうなし"],
-		["甘いものが欲しい","あまいものがほしい"],
-		["オニオンサーモン","おにおんさーもん"],
-		["袋のネズミ","ふくろのねずみ"],
-	];
-	let word;
-	let romaji;
-	let loc;
-	let score;
-	let miss;
-	let isPlaying = false;
-	let startTime;
-	let exportString = "";
-	
-	$(window).keydown(e=>{
-		if(e.key === "Enter" && isPlaying === false) {
-			startTime = Date.now(); //updateTimerを行う前の経過ミリ秒を代入
-			isPlaying = true;
-			createTarget();
-			init();
-			updateTimer();
-			return;
-		}
-
-		if(isPlaying === false) {
-			return;
-		}
-		if(e.key === romaji[loc]) {
-			exportString += romaji[loc];
-			loc++;
-			if(loc === romaji.length) {
-				exportString = "";
-				createTarget();
-				loc = 0;
-			}
-			updateTarget();
-			score++;
-			$scoreLabel.text(score);
-		}else {
-			miss++;
-			$missLabel.text(miss);
-		}
-	});
-	
-	function updateTarget() {
-		$target.html("<span style=\"color: red;\">"+exportString+"</span>" + romaji.substring(loc));
-	}
-	
-	function updateTimer() {
-		const timeLeft = startTime + timeLimit - Date.now(); //GameStartしたときの残り時間を代入
-		$timerLabel.text((timeLeft/1000).toFixed(2));
-		const timeoutId = setTimeout(()=>{
-			updateTimer();
-		}, 10);
-		if(timeLeft < 0) {
-			clearTimeout(timeoutId);
-			$timerLabel.text("0.00");
-			isPlaying = 0;
-			setTimeout(()=>{
-				showResult();
-			}, 100);
-		}
-	}
-	
-	function showResult() {
-		const accuracy = score + miss === 0 ? 0 : score / (score + miss) * 100;
-		alert(`${score} letters, ${miss} misses, ${accuracy.toFixed(2)}% accuracy!`);
-	}
-	
-	function init() {
-		score = 0;
-		miss = 0;
-		loc = 0;
-		$scoreLabel.text(score);
-		$missLabel.text(miss);
-		$target.text(romaji);
-	}
-
-	function createTarget() {
-		word = words[Math.floor(Math.random() * words.length)];
-		romaji = createRomajiTarget(toArrayJapanese(word[1]));
-	}
-
 	let kana = {
 		"あ":["a"],"い":["i"],"う":["u"],"え":["e"],"お":["o"],
 		"か":["ka","ca"],"き":["ki"],"く":["ku","cu","qu"],"け":["ke"],"こ":["ko","co"],
@@ -213,16 +109,171 @@ $(()=>{
 		"んでゅ":["nndelyu","nndexyu","ndelyu","ndexyu"],
 		"んー":["nn-","n-"],"ん。":["nn.","n."], "ん、":["nn,","n,"],
 	};
+	
+	const $jaWord = $("#jaWord");
+	const $jaRead = $("#jaRead");
+	const $target = $("#target");
+	const $scoreLabel = $("#score");
+	const $missLabel = $("#miss");
+	const $timerLabel = $("#timer");
 
-	function createRomajiTarget(array) {
+	const timeLimit = 30 * 1000;
+	
+	const words = [
+		["優柔不断","ゆうじゅうふだん"],
+		["武士の情け","ぶしのなさけ"],
+		["タイピングソフト","たいぴんぐそふと"],
+		["エンターキー","えんたーきー"],
+		["味噌豚骨","みそとんこつ"],
+		["危ない橋を渡る","あぶないはしをわたる"],
+		["急がば回れ","いそがばまわれ"],
+		["円周率","えんしゅうりつ"],
+		["足し算引き算","たしざんひきざん"],
+		["アメリカ合衆国","あめりかがっしゅうこく"],
+		["大敗を喫す","たいはいをきっす"],
+		["根性なし","こんじょうなし"],
+		["甘いものが欲しい","あまいものがほしい"],
+		["オニオンサーモン","おにおんさーもん"],
+		["袋のネズミ","ふくろのねずみ"],
+	];
+	let word;
+	let score;
+	let miss;
+	let typeKey;
+	let isPlaying = false;
+	let startTime;
+	let loc = 0;
+	let allString = "";
+	let partString = "";
+	let romanArray = [];
+	let romanAllArray = [];
+	
+	$(window).keydown(e=>{
+		typeKey = e.key;
+		console.log("test");
+		if(typeKey === "Enter" && isPlaying === false) {
+			init();
+			return;
+		}
+
+		if(isPlaying === false) {
+			return;
+		}
+		// 全てのタイピング文字列
+		allString += typeKey;
+		// 仕分けを行なうためのタイピング文字列
+		partString += typeKey;
+
+		romanArray = filtering(partString, romanAllArray[loc]);
+
+
+		if(romanArray.length !== 0) {
+			score++;
+			$scoreLabel.text(score);
+			updateTarget(loc);
+		}else {
+			miss++;
+			$missLabel.text(miss);
+			partString = partString.slice(0, -typeKey.length); 
+			allString = allString.slice(0, -typeKey.length); 
+		}
+	
+		if(romanArray[0] === partString) {
+			loc++;
+			partString = "";
+		}
+		if(romanAllArray.length === loc) {
+			createTarget();
+		}
+	});
+	
+	function updateTarget(location) {
+		let str = "";
+		romanAllArray[location] = romanArray;
+		for(let i=0; i<romanAllArray.length; i++) {
+			str += romanAllArray[i][0];
+		}
+		console.log(allString.length +"番目の文字列です");
+		$target.html("<span style=\"color: red;\">"+allString+"</span>" + str.substring(allString.length));
+	}
+	
+	function updateTimer() {
+		const timeLeft = startTime + timeLimit - Date.now(); //GameStartしたときの残り時間を代入
+		$timerLabel.text((timeLeft/1000).toFixed(2));
+		const timeoutId = setTimeout(()=>{
+			updateTimer();
+		}, 10);
+		if(timeLeft < 0　&& isPlaying === true) {
+			isPlaying = false;
+			clearTimeout(timeoutId);
+			$target.text("終了！エンターで再挑戦");
+			$timerLabel.text("0.00");
+			setTimeout(()=>{
+				showResult();
+			}, 100);
+		}
+	}
+	
+	function showResult() {
+		const accuracy = score + miss === 0 ? 0 : score / (score + miss) * 100;
+		alert(`${score} letters, ${miss} misses, ${accuracy.toFixed(2)}% accuracy!`);
+	}
+	
+	function init() {
+		updateTimer();
+		createTarget();
+		score = 0;
+		miss = 0;
+		loc = 0;
+		allString = "";
+		partString = "";
+		$scoreLabel.text(score);
+		$missLabel.text(miss);
+		startTime = Date.now(); //updateTimerを行う前の経過ミリ秒を代入
+		isPlaying = true;
+	}
+	
+	function createTarget() {
+		word = words[Math.floor(Math.random() * words.length)];
+		$jaWord.text(word[0]);
+		$jaRead.text(word[1]);
+		romanAllArray = RomajiToArray(JapaneseToArray(word[1]));
+		loc = 0;
+		allString = "";
+		let str = "";
+		for(let i=0; i<romanAllArray.length; i++) {
+			str += romanAllArray[i][0];
+		}
+		$target.text(str);
+	}
+
+	function RomajiToArray(array) {
+		let arr = [];
+		for(let i=0; i<array.length; i++) {
+			arr.push(kana[array[i]]);
+		}
+		return arr;
+	}
+
+	function defaultRomajiTargetLength(array) {
 		let str = "";
 		for(let i=0; i<array.length; i++) {
 			str += kana[array[i]][0];
-		}
-		return str;
+		}       
+		return str.length;
 	}
+
+	function filtering(string,array) {
+        let arr = [];
+        for(let i=0; i<array.length; i++) {
+            if(array[i].indexOf(string) === 0) { 
+				arr.push(array[i]);
+            }
+		}
+        return arr;
+    }
 	
-	function toArrayJapanese(string) {
+	function JapaneseToArray(string) {
 		let array = [];
 		let prev = "";
 		let curr = "";
