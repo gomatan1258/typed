@@ -6,6 +6,16 @@ body {
   color: #ffffff;
 }
 
+#jaWord {
+  font-size: 48px;
+  letter-spacing: 3px;
+}
+
+#jaRead {
+  font-size: 48px;
+  letter-spacing: 3px;
+}
+
 #target {
   font-size: 48px;
   letter-spacing: 3px;
